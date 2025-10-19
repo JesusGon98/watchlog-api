@@ -12,34 +12,51 @@ class WatchEntry(db.Model):
 
     __tablename__ = "watch_entries"
 
-    # TODO: definir columnas basicas (id, user_id, content_type, content_id, status).
-    # TODO: agregar columnas de progreso (current_season, current_episode, watched_episodes, total_episodes).
-    # TODO: establecer claves foraneas hacia User, Movie y Series segun el tipo.
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey("movies.id"), nullable=True)
+    series_id = db.Column(db.Integer, db.ForeignKey("series.id"), nullable=True)
+    status = db.Column(db.String(20), default="in_progress")
+    current_season = db.Column(db.Integer, default=0)
+    current_episode = db.Column(db.Integer, default=0)
+    watched_episodes = db.Column(db.Integer, default=0)
+    total_episodes = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # TODO: modelar las relaciones back_populates con User, Movie y Series.
+    # Relaciones
+    user = db.relationship("User", back_populates="watch_entries")
+    movie = db.relationship("Movie", back_populates="watch_entries")
+    series = db.relationship("Series", back_populates="watch_entries")
 
     def percentage_watched(self) -> float:
         """Calcula el porcentaje completado para el contenido asociado."""
-        # TODO: implementar calculo utilizando watched_episodes y total_episodes.
-        raise NotImplementedError("TODO: calcular porcentaje de avance real")
+        if not self.total_episodes:
+            return 0.0
+        percentage = (self.watched_episodes / self.total_episodes) * 100
+        return min(percentage, 100.0)
 
     def mark_as_watched(self) -> None:
         """Marca el contenido como completado."""
-        # TODO: actualizar atributos y timestamps para reflejar el estado final.
-        pass
+        self.status = "completed"
+        self.watched_episodes = self.total_episodes
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
 
     def to_dict(self) -> dict:
         """Serializa la entrada para respuestas JSON."""
         # TODO: reemplazar con serializacion acorde al modelo final.
         return {
-            "id": getattr(self, "id", None),
-            "user_id": getattr(self, "user_id", None),
-            "content_type": getattr(self, "content_type", None),
-            "content_id": getattr(self, "content_id", None),
-            "status": getattr(self, "status", None),
-            "current_season": getattr(self, "current_season", None),
-            "current_episode": getattr(self, "current_episode", None),
-            "watched_episodes": getattr(self, "watched_episodes", None),
-            "total_episodes": getattr(self, "total_episodes", None),
-            "updated_at": getattr(self, "updated_at", datetime.utcnow()),
+              "id": self.id,
+            "user_id": self.user_id,
+            "movie_id": self.movie_id,
+            "series_id": self.series_id,
+            "status": self.status,
+            "current_season": self.current_season,
+            "current_episode": self.current_episode,
+            "watched_episodes": self.watched_episodes,
+            "total_episodes": self.total_episodes,
+            "percentage_watched": self.percentage_watched(),
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }

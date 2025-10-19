@@ -23,6 +23,10 @@ def register_extensions(app: Flask) -> None:
     db.init_app(app)
     migrate.init_app(app, db)
 
+    # Importa los modelos aquí para que Alembic los detecte
+    from src.models import Movie, Series, Season, User, WatchEntry
+    # No necesitas usarlos, solo importarlos
+
 
 def register_blueprints(app: Flask) -> None:
     """Registra los blueprints del proyecto."""
